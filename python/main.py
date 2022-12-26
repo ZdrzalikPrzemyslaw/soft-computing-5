@@ -37,15 +37,17 @@ class NeuralNetwork:
         # czy uruchomilismy bias
         self.is_bias = is_bias
         self.iteration = 0
+        weight_possible = 0.2
+        weight_possible2 = 0.1
         # warstwy ukryta i wyjściowa oraz odpowiadające im struktury zapisujące zmianę wagi w poprzedniej iteracji, używane do momentum
-        self.hidden_layer = (2 * numpy.random.random((number_of_inputs, number_of_neurons_hidden_layer)).T - 1)
+        self.hidden_layer = (weight_possible * numpy.random.random((number_of_inputs, number_of_neurons_hidden_layer)).T - weight_possible2)
         self.delta_weights_hidden_layer = numpy.zeros((number_of_inputs, number_of_neurons_hidden_layer)).T
-        self.output_layer = 2 * numpy.random.random((number_of_neurons_hidden_layer, number_of_neurons_output)).T - 1
+        self.output_layer = weight_possible * numpy.random.random((number_of_neurons_hidden_layer, number_of_neurons_output)).T - weight_possible2
         self.delta_weights_output_layer = numpy.zeros((number_of_neurons_hidden_layer, number_of_neurons_output)).T
         # jesli wybralismy że bias ma byc to tworzymy dla każdej warstwy wektor wag biasu
         if is_bias:
-            self.bias_hidden_layer = (2 * numpy.random.random(number_of_neurons_hidden_layer) - 1)
-            self.bias_output_layer = (2 * numpy.random.random(number_of_neurons_output) - 1)
+            self.bias_hidden_layer = (weight_possible * numpy.random.random(number_of_neurons_hidden_layer) - weight_possible2)
+            self.bias_output_layer = (weight_possible * numpy.random.random(number_of_neurons_output) - weight_possible2)
         # jesli nie ma byc biasu to tworzymy takie same warstwy ale zer. Nie ingerują one potem w obliczenia w żaden sposób
         else:
             self.bias_hidden_layer = numpy.zeros(number_of_neurons_hidden_layer)
@@ -170,33 +172,57 @@ def plot_file(fileName):
     plt.show()
 
 
+def blockshaped(arr, nrows, ncols):
+    """
+    Return an array of shape (n, nrows, ncols) where
+    n * nrows * ncols = arr.size
+
+    If arr is a 2D array, the returned array should look like n subblocks with
+    each subblock preserving the "physical" layout of arr.
+    """
+    h, w = arr.shape
+    assert h % nrows == 0, f"{h} rows is not evenly divisible by {nrows}"
+    assert w % ncols == 0, f"{w} cols is not evenly divisible by {ncols}"
+    return (arr.reshape(h // nrows, nrows, -1, ncols)
+            .swapaxes(1, 2)
+            .reshape(-1, nrows, ncols))
+
+
 def main():
     files = []
     path = "./images"
     for i in [1, 2, 3, 4, 5, 6, 7, 8]:
-        files.append(imageio.imread(os.path.join(path, '0' + i.__str__() + '.bmp')).flatten())
+        files.append(imageio.imread(os.path.join(path, '0' + i.__str__() + '.bmp')))
 
-    # TODO: podzielic obraz na 128 losowych fragmentow 8x8
-    #  uczyc w losowej kolejnosci
+    _files = []
 
-    random.shuffle(files)
+    for i in files:
+        _files.append(blockshaped(i, 8, 8))
+
+    flat = []
+    for ite1, i in enumerate(_files):
+        flat.append([])
+        for ite, j in enumerate(i):
+            flat[ite1].append(j.flatten())
+
+    random.shuffle(flat)
 
     test_per_photo = 128
     chunk_size = 64
-    hidden_neurons_count = 32
+    hidden_neurons_count = 64
 
     train = []
     test = []
     for i in range(2):
         for j in range(test_per_photo):
-            random_num = randrange(512 * 512 - chunk_size)
+            random_num = randrange(4096)
             if random_num < 0:
                 random_num = 0
-            train.append(files[i][random_num:random_num + chunk_size])
+            train.append(flat[i][random_num])
     for i in range(2, 8):
         test.append([])
-        for j in range(0, 512 * 512, chunk_size):
-            test[i - 2].append(files[i][j:j + chunk_size])
+        for j in range(0, 4096):
+            test[i - 2].append(flat[i][j])
 
     for i, j in enumerate(train):
         train[i] = train[i] * (1 / 255)
@@ -205,7 +231,7 @@ def main():
         for ite2, j in enumerate(i):
             test[ite1][ite2] = test[ite1][ite2] * (1 / 255)
 
-    Network = NeuralNetwork(number_of_neurons_hidden_layer=hidden_neurons_count, is_bias=True,
+    Network = NeuralNetwork(number_of_neurons_hidden_layer=hidden_neurons_count, is_bias=False,
                             number_of_neurons_output=chunk_size, number_of_inputs=chunk_size)
     iterations = 1000
 
@@ -217,27 +243,51 @@ def main():
     plot_file(ERROR_FILE)
 
     res = []
-    for _ in test:
-        res.append([])
 
     for ite1, i in enumerate(test):
+        res.append([])
         for ite2, j in enumerate(i):
             res[ite1].append(Network.calculate_outputs(j)[1])
 
-    pics = []
+    reshaped = []
     for _ in res:
-        pics.append([])
+        reshaped.append([])
     for ite1, i in enumerate(res):
         for ite2, j in enumerate(i):
-            for k in j:
-                pics[ite1].append(int(k * 255))
+            reshaped[ite1].append(np.reshape(j, (8, 8)))
 
-    pics_reshape = []
-    for i in pics:
-        pics_reshape.append(np.reshape(i, (512, 512)))
-    xd = 12
+    joined = []
+    for i in reshaped:
+        for j in range(0, 4096, 64):
+            tmp = []
+            for k in range(64):
+                tmp.append(i[j + k])
+            joined.append(np.concatenate(tmp, axis=1))
 
-    for i, j in enumerate(pics_reshape):
+    joined2 = []
+    for i in range(0, len(joined), 64):
+        tmp = []
+        for k in range(64):
+            tmp.append(joined[i + k])
+        joined2.append(np.concatenate(tmp, axis=0))
+
+    # pics = []
+    # for _ in res:
+    #     pics.append([])
+    # for ite1, i in enumerate(res):
+    #     for ite2, j in enumerate(i):
+    #         for k in j:
+    #             pics[ite1].append(int(k * 255))
+    #
+    # pics_reshape = []
+    # for i in pics:
+    #     pics_reshape.append(np.reshape(i, (512, 512)))
+    # xd = 12
+
+    # for i, j in enumerate(pics_reshape):
+    #     imageio.imsave('./out/' + str(i) + '.bmp', j)
+
+    for i, j in enumerate(joined2):
         imageio.imsave('./out/' + str(i) + '.bmp', j)
 
 
