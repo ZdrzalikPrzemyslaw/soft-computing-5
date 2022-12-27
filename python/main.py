@@ -191,39 +191,42 @@ def blockshaped(arr, nrows, ncols):
 def main():
     files = []
     path = "./images"
+    # pobieranie zdjec z plikow
     for i in [1, 2, 3, 4, 5, 6, 7, 8]:
         files.append(imageio.imread(os.path.join(path, '0' + i.__str__() + '.bmp')))
 
     _files = []
 
+    # zmiana zdjec na fragmenty 8 na 8
     for i in files:
         _files.append(blockshaped(i, 8, 8))
 
+    # splaszczenie wektorów (teraz z 8 na 8 jest 64 na 1)
     flat = []
     for ite1, i in enumerate(_files):
         flat.append([])
         for ite, j in enumerate(i):
             flat[ite1].append(j.flatten())
 
-    random.shuffle(flat)
-
     test_per_photo = 128
     chunk_size = 64
-    hidden_neurons_count = 64
+    hidden_neurons_count = 4
 
+    # Stworzenie wektorów treningowyvch i testowych
     train = []
     test = []
-    for i in range(2):
+    for i in range(6,8):
         for j in range(test_per_photo):
             random_num = randrange(4096)
             if random_num < 0:
                 random_num = 0
             train.append(flat[i][random_num])
-    for i in range(2, 8):
+    for i in range(0, 8):
         test.append([])
         for j in range(0, 4096):
-            test[i - 2].append(flat[i][j])
+            test[i].append(flat[i][j])
 
+    # Normalizacja wartosci w wektorach
     for i, j in enumerate(train):
         train[i] = train[i] * (1 / 255)
 
