@@ -11,18 +11,22 @@ def PSNR(original, compressed):
     mse = np.mean((original - compressed) ** 2)
     if (mse == 0):  # MSE is zero means no noise is present in the signal .
         # Therefore PSNR have no importance.
-        return 100
+        return 50
     max_pixel = 255.0
-    psnr = 20 * log10(max_pixel / sqrt(mse))
+    psnr = 10 * log10(max_pixel**2 / mse)
     return psnr
 
 
 outputs = []
-for i in dirs:
-    for j in files:
+for j in files:
+    for i in dirs:
         or_str = "./images/" + j
         comp_str = i + j
         original = cv2.imread(or_str)
         compressed = cv2.imread(comp_str)
         PSNR(original, compressed)
-        outputs.append("PSNR OF " + or_str + " and " + comp_str + " = " + PSNR(original, compressed))
+        outputs.append("PSNR OF " + or_str + " and " + comp_str + " = " + PSNR(original, compressed).__str__())
+
+with open('PSNR.txt', 'w') as f:
+    for line in outputs:
+        f.write(f"{line}\n")

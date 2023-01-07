@@ -71,7 +71,6 @@ class NeuralNetwork:
     # najpierw liczymy wynik z warstwy ukrytej i potem korzystając z niego liczymy wynik dla neuronów wyjścia
     # Jak wiadomo bias to przesunięcie wyniku o stałą więc jeżeli wybraliśmy że bias istnieje to on jest po prostu dodawany do odpowiedniego wyniku iloczynu skalarnego
     def calculate_outputs(self, inputs):
-
         hidden_layer_output = self.linear_fun(numpy.dot(inputs, self.hidden_layer.T) + self.bias_hidden_layer)
         output_layer_output = self.linear_fun(
             numpy.dot(hidden_layer_output, self.output_layer.T) + self.bias_output_layer)
@@ -186,7 +185,8 @@ def blockshaped(arr, nrows, ncols):
             .reshape(-1, nrows, ncols))
 
 
-def main():
+def main(size):
+    numpy.random.seed(0)
     files = []
     path = "./images"
     # pobieranie zdjec z plikow
@@ -206,14 +206,14 @@ def main():
         for ite, j in enumerate(i):
             flat[ite1].append(j.flatten())
 
-    test_per_photo = 128
+    test_per_photo = 256
     chunk_size = 64
-    hidden_neurons_count = 16
+    hidden_neurons_count = size
 
     # Stworzenie wektorów treningowyvch i testowych
     train = []
     test = []
-    for i in range(6, 8):
+    for i in range(3, 5):
         for j in range(test_per_photo):
             random_num = randrange(4096)
             if random_num < 0:
@@ -295,4 +295,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    for i in [1, 2, 3, 4, 8, 16, 32, 64, 128, 256]:
+        main(i)
