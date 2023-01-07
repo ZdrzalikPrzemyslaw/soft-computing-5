@@ -1,15 +1,9 @@
-import random
-
-import matplotlib.image
-import numpy
-import time
-
-import matplotlib.pyplot as plt
-
+import os
 from random import randrange
 
-import os
 import imageio
+import matplotlib.pyplot as plt
+import numpy
 import numpy as np
 
 # wspolczynnik uczenia
@@ -40,14 +34,18 @@ class NeuralNetwork:
         weight_possible = 0.2
         weight_possible2 = 0.1
         # warstwy ukryta i wyjściowa oraz odpowiadające im struktury zapisujące zmianę wagi w poprzedniej iteracji, używane do momentum
-        self.hidden_layer = (weight_possible * numpy.random.random((number_of_inputs, number_of_neurons_hidden_layer)).T - weight_possible2)
+        self.hidden_layer = (weight_possible * numpy.random.random(
+            (number_of_inputs, number_of_neurons_hidden_layer)).T - weight_possible2)
         self.delta_weights_hidden_layer = numpy.zeros((number_of_inputs, number_of_neurons_hidden_layer)).T
-        self.output_layer = weight_possible * numpy.random.random((number_of_neurons_hidden_layer, number_of_neurons_output)).T - weight_possible2
+        self.output_layer = weight_possible * numpy.random.random(
+            (number_of_neurons_hidden_layer, number_of_neurons_output)).T - weight_possible2
         self.delta_weights_output_layer = numpy.zeros((number_of_neurons_hidden_layer, number_of_neurons_output)).T
         # jesli wybralismy że bias ma byc to tworzymy dla każdej warstwy wektor wag biasu
         if is_bias:
-            self.bias_hidden_layer = (weight_possible * numpy.random.random(number_of_neurons_hidden_layer) - weight_possible2)
-            self.bias_output_layer = (weight_possible * numpy.random.random(number_of_neurons_output) - weight_possible2)
+            self.bias_hidden_layer = (
+                    weight_possible * numpy.random.random(number_of_neurons_hidden_layer) - weight_possible2)
+            self.bias_output_layer = (
+                    weight_possible * numpy.random.random(number_of_neurons_output) - weight_possible2)
         # jesli nie ma byc biasu to tworzymy takie same warstwy ale zer. Nie ingerują one potem w obliczenia w żaden sposób
         else:
             self.bias_hidden_layer = numpy.zeros(number_of_neurons_hidden_layer)
@@ -210,12 +208,12 @@ def main():
 
     test_per_photo = 128
     chunk_size = 64
-    hidden_neurons_count = 4
+    hidden_neurons_count = 16
 
     # Stworzenie wektorów treningowyvch i testowych
     train = []
     test = []
-    for i in range(6,8):
+    for i in range(6, 8):
         for j in range(test_per_photo):
             random_num = randrange(4096)
             if random_num < 0:
@@ -289,9 +287,11 @@ def main():
 
     # for i, j in enumerate(pics_reshape):
     #     imageio.imsave('./out/' + str(i) + '.bmp', j)
-
+    name = "./out/" + hidden_neurons_count.__str__()
+    os.mkdir(name)
+    name += "/"
     for i, j in enumerate(joined2):
-        imageio.imsave('./out/' + str(i) + '.bmp', j)
+        imageio.imsave(name + '0' + str(i + 1) + '.bmp', j)
 
 
 if __name__ == "__main__":
