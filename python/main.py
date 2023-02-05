@@ -7,7 +7,7 @@ import numpy
 import numpy as np
 
 # wspolczynnik uczenia
-eta = 0.001
+eta = 0.00000001
 # momentum
 alfa = 0.1
 
@@ -158,8 +158,8 @@ def plot_file(fileName):
     liczba = 1
     for i in lines:
         values.append(float(i))
-        liczba += 1
         ilosc.append(liczba)
+        liczba += 1
 
     # plt.plot(values, 'o', markersize=1)
     plt.xlabel('Iteration')
@@ -191,7 +191,7 @@ def main(size):
     path = "./images"
     # pobieranie zdjec z plikow
     for i in [1, 2, 3, 4, 5, 6, 7, 8]:
-        files.append(imageio.imread(os.path.join(path, '0' + i.__str__() + '.bmp')))
+        files.append(np.asarray(imageio.imread(os.path.join(path, '0' + i.__str__() + '.bmp'))).astype(int))
 
     _files = []
 
@@ -206,7 +206,18 @@ def main(size):
         for ite, j in enumerate(i):
             flat[ite1].append(j.flatten())
 
-    test_per_photo = 256
+    averages = []
+    flat2 = np.asarray(flat)
+    for i in flat2:
+        averages.append(np.mean(i, axis=0))
+
+    averWages = numpy.asarray(averages)
+
+    for ite, val in enumerate(flat):
+        for ite2, val2 in enumerate(val):
+            flat[ite][ite2] = flat[ite][ite2] - averages[ite]
+
+    test_per_photo = 1024
     chunk_size = 64
     hidden_neurons_count = size
 
@@ -224,13 +235,13 @@ def main(size):
         for j in range(0, 4096):
             test[i].append(flat[i][j])
 
-    # Normalizacja wartosci w wektorach
-    for i, j in enumerate(train):
-        train[i] = train[i] * (1 / 255)
-
-    for ite1, i in enumerate(test):
-        for ite2, j in enumerate(i):
-            test[ite1][ite2] = test[ite1][ite2] * (1 / 255)
+    # # Normalizacja wartosci w wektorach
+    # for i, j in enumerate(train):
+    #     train[i] = train[i] * (1 / 255)
+    #
+    # for ite1, i in enumerate(test):
+    #     for ite2, j in enumerate(i):
+    #         test[ite1][ite2] = test[ite1][ite2] * (1 / 255)
 
     Network = NeuralNetwork(number_of_neurons_hidden_layer=hidden_neurons_count, is_bias=False,
                             number_of_neurons_output=chunk_size, number_of_inputs=chunk_size)
@@ -248,7 +259,7 @@ def main(size):
     for ite1, i in enumerate(test):
         res.append([])
         for ite2, j in enumerate(i):
-            res[ite1].append(Network.calculate_outputs(j)[1])
+            res[ite1].append(Network.calculate_outputs(j)[1] + averages[ite1])
 
     reshaped = []
     for _ in res:
@@ -295,5 +306,6 @@ def main(size):
 
 
 if __name__ == "__main__":
-    for i in [1, 2, 3, 4, 8, 16, 32, 64, 128, 256]:
+    for i in [1, 2, 3, 4, 8, 16, 32, 64, 128]:
+        print(i)
         main(i)
